@@ -42,15 +42,20 @@ int main()
   WINDOW * clock;
   clock = newwin(1, 8, 0, COLS - 8);
 
+  time_t t = time(NULL);
+  struct tm tm = *localtime(&t);
+  refresh();
+
   while(!done){
 
     wmove(clock, 0, 0);
     wprintw(clock, "        ");
     wmove(clock, 0, 0);
-    wprintw(clock, "%ld:%ld:%ld", dtime/(60*60),(dtime/60)%60, dtime%60);
+    wprintw(clock, "%ld:%ld:%ld", dtime/(60*60), (dtime/60)%60, dtime%60);
     wrefresh(clock);
 
-    mvprintw(0,0,"%c",ch);
+    mvprintw(0, 0, "%c", ch);
+    mvprintw(3, 0, "%d", tm.tm_mon);
     refresh();
   }
 
