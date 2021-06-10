@@ -1,9 +1,19 @@
 #include <ncurses.h>
 #include <pthread.h>
+#include <stdio.h>
 #include <time.h>
 #include <unistd.h>
+#include "fileToString.h"
 
 volatile bool done = FALSE;
+
+void spit()
+{
+  char sup[150];
+  FILE * fp = fopen("sup", "r");
+  fgets(sup, 150, fp);
+  printf("%s", sup);
+}
 
 void * input( char * ch){
   while(*ch != 27){
@@ -23,8 +33,7 @@ void * timer(time_t * t){
   }
 }
 
-int main()
-{
+void interface(){
   initscr();
   noecho();
   raw();
@@ -62,3 +71,8 @@ int main()
   endwin();
 }
 
+int main(int argc, char * argv[])
+{
+  if(argc == 1)
+    spit();
+}
