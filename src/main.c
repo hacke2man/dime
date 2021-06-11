@@ -1,18 +1,31 @@
+#include <stdlib.h>
+#include <string.h>
 #include <ncurses.h>
 #include <pthread.h>
 #include <stdio.h>
 #include <time.h>
 #include <unistd.h>
-#include "fileToString.h"
 
 volatile bool done = FALSE;
 
 void spit()
 {
-  char sup[150];
-  FILE * fp = fopen("sup", "r");
-  fgets(sup, 150, fp);
-  printf("%s", sup);
+  char position[50];
+  FILE * fp = fopen("sup", "r+");
+  fgets(position, 50, fp);
+  char * positionend = &position[strlen(position) - 1];
+  long number = strtol(position, &positionend, 10);
+  printf("%ld", number);
+
+  if(number >= 8)
+    number = 0;
+  else
+    number++;
+
+  char out[50];
+  sprintf(out, "%ld\n", number);
+  rewind(fp);
+  fputs(out, fp);
 }
 
 void * input( char * ch){
