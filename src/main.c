@@ -12,12 +12,14 @@ time_t dtime;
 long score;
 long position;
 
-long getNum(char * itemstart){
+long getNum(char * itemstart)
+{
   char * itemend = strchr(itemstart, ',');
   return strtol(itemstart, &itemend, 10);
 }
 
-char * getstring(char * itemstart){
+char * getstring(char * itemstart)
+{
   char * breakchar = strchr(itemstart, ',');
   *breakchar = '\0';
   char * dest = malloc(sizeof(char) * (strlen(itemstart) + 1));
@@ -26,14 +28,16 @@ char * getstring(char * itemstart){
   return dest;
 }
 
-void ReadStats(char * statString){
+void ReadStats(char * statString)
+{
   position = getNum(statString);
 
   char * next = strchr(statString, ',');
-  score = getNum(statString);
+  score = getNum(&next[1]);
 }
 
-void WriteStats(FILE * fp){
+void WriteStats(FILE * fp)
+{
   char out[50];
   rewind(fp);
   sprintf(out, "%ld,%ld,\n", position, score);
@@ -50,60 +54,68 @@ void spit()
     fgets(line, 50, fp);
   }
 
-  position++;
-  if(position > 7)
-    position = 0;
+  time_t seed;
+  srand(time(&seed));
+  position = rand()%8;
 
+  printf("%s\n", getstring(line));
+  WriteStats(fp);
+  exit(0);
+}
 
-  printf("%s", getstring(line));
+void Done(char * itemname)
+{
+  FILE * fp = fopen("sup", "r+");
+  char line[50];
+  char * name;
+  long points = 0;
+  char * itemstart;
+  char * itemend;
+
+  for(int i = 0; i < 1 + 8; i++){
+    fgets(line, 50, fp);
+    name = getstring(line);
+    if(strcmp(itemname, name) == 0)
+    {
+      itemstart = strchr(line, ',');
+      itemend = strchr(itemstart, ',');
+      points = strtol(&itemstart[1], &itemend, 10);
+      score = score + points;
+      printf("score: %ld\n", score);
+      break;
+    }
+  }
+
   WriteStats(fp);
 }
 
-
-/* void interface(){ */
-/*   initscr(); */
-/*   noecho(); */
-/*   raw(); */
-/*   curs_set(0); */
-
-/*   int ch = ' '; */
-/*   pthread_t iThread; */
-/*   pthread_create(&iThread, NULL, input, &ch); */
-
-/*   pthread_t tThread; */
-/*   pthread_create(&tThread, NULL, timer, &dtime); */
-
-/*   char * clr[COLS]; */
-/*   WINDOW * clock; */
-/*   clock = newwin(1, 8, 0, COLS - 8); */
-
-/*   time_t t = time(NULL); */
-/*   struct tm tm = *localtime(&t); */
-/*   refresh(); */
-
-/*   while(!done){ */
-/*     wmove(clock, 0, 0); */
-/*     wprintw(clock, "        "); */
-/*     wmove(clock, 0, 0); */
-/*     wprintw(clock, "%ld:%ld:%ld", dtime/(60*60), (dtime/60)%60, dtime%60); */
-/*     wrefresh(clock); */
-
-/*     mvprintw(0, 0, "%c", ch); */
-/*     mvprintw(3, 0, "%d", tm.tm_mon); */
-/*     WINDOW * timerWin; */
-/*     timerWin = newwin(1, 8, 0, COLS - 8); */
-
-/*     DispTimer(timerWin, &dtime); */
-/*     mvprintw(0,0,"%c",ch); */
-
-/*     refresh(); */
-/*   } */
-
-/*   endwin(); */
-/* } */
+void Reset(FILE * fp)
+{
+  rewind(fp);
+  score = 0;
+  WriteStats(fp);
+}
 
 int main(int argc, char * argv[])
 {
+  char line[50];
+  FILE * fp = fopen("sup", "r+");
+  fgets(line, 50, fp);
+  ReadStats(line);
+  fclose(fp);
+
   if(argc == 1)
     spit();
+
+  for(int i = 0; i < argc; i++)
+  {
+    if(*argv[i] == '-' )
+    {
+      if(argv[i][1] == 'd')
+        Done(argv[i+1]);
+      else if (argv[i][1] == 'r')
+       Reset(fp);
+    }
+  }
+  fclose(fp);
 }
