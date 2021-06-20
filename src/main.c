@@ -10,7 +10,7 @@
 volatile bool done = FALSE;
 time_t dtime;
 long score;
-long position;
+long day;
 
 long getNum(char * itemstart)
 {
@@ -30,36 +30,38 @@ char * getstring(char * itemstart)
 
 void ReadStats(char * statString)
 {
-  position = getNum(statString);
+  day = getNum(statString);
 
   char * next = strchr(statString, ',');
   score = getNum(&next[1]);
 }
 
-void WriteStats(FILE * fp)
+void WriteStats()
 {
+  FILE * fp = fopen("sup", "r+");
   char out[50];
   rewind(fp);
-  sprintf(out, "%ld,%ld,\n", position, score);
+  sprintf(out, "%ld,%ld,\n", day, score);
   fputs(out, fp);
+  fclose(fp);
 }
 
 void spit()
 {
   char line[50];
   FILE * fp = fopen("sup", "r+");
-  ReadStats(fgets(line, 50, fp));
+  int position = rand()%8;
 
   for(int i = 0; i < 1 + position; i++){
     fgets(line, 50, fp);
   }
+  fclose(fp);
 
   time_t seed;
   srand(time(&seed));
-  position = rand()%8;
 
-  printf("%s\n", getstring(line));
-  WriteStats(fp);
+  printf("%s", getstring(line));
+  WriteStats();
   exit(0);
 }
 
@@ -86,23 +88,36 @@ void Done(char * itemname)
     }
   }
 
-  WriteStats(fp);
+  WriteStats();
+  fclose(fp);
 }
 
-void Reset(FILE * fp)
+void Reset()
 {
-  rewind(fp);
+  FILE * fp = fopen("sup", "r+");
   score = 0;
-  WriteStats(fp);
+  WriteStats();
+  fclose(fp);
 }
 
 int main(int argc, char * argv[])
 {
   char line[50];
+  /* TODO:use getenv("HOME")/.config/dime/tasklist */
   FILE * fp = fopen("sup", "r+");
   fgets(line, 50, fp);
   ReadStats(line);
   fclose(fp);
+
+  time_t t = time(NULL);
+  struct tm tm = *localtime(&t);
+  int checkDay = tm.tm_yday;
+
+  if(checkDay !=day)
+  {
+    Reset();
+    day = checkDay;
+  }
 
   if(argc == 1)
     spit();
@@ -114,7 +129,8 @@ int main(int argc, char * argv[])
       if(argv[i][1] == 'd')
         Done(argv[i+1]);
       else if (argv[i][1] == 'r')
-       Reset(fp);
+       Reset();
+      //TODO:add undo
     }
   }
   fclose(fp);
