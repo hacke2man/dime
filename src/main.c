@@ -1,3 +1,4 @@
+#include "limits.h"
 #include <stdlib.h>
 #include <string.h>
 #include <ncurses.h>
@@ -11,6 +12,8 @@ volatile bool done = FALSE;
 time_t dtime;
 long score;
 long day;
+FILE * fp;
+FILE * lg;
 
 long getNum(char * itemstart)
 {
@@ -38,43 +41,36 @@ void ReadStats(char * statString)
 
 void WriteStats()
 {
-  FILE * fp = fopen("sup", "r+");
   char out[50];
-  rewind(fp);
   sprintf(out, "%ld,%ld,\n", day, score);
-  fputs(out, fp);
-  fclose(fp);
+  fputs(out, lg);
 }
 
 void spit()
 {
-  char line[50];
-  FILE * fp = fopen("sup", "r+");
-  int position = rand()%8;
-
-  for(int i = 0; i < 1 + position; i++){
-    fgets(line, 50, fp);
-  }
-  fclose(fp);
-
   time_t seed;
   srand(time(&seed));
+  char line[50];
+  int position = rand()%7 + 1;
 
-  printf("%s", getstring(line));
-  WriteStats();
+  for(int i = 0; i < position; i++){
+    fgets(line, 50, fp);
+  }
+
+
+  printf("%s\nScore:%ld\n", getstring(line), score);
   exit(0);
 }
 
 void Done(char * itemname)
 {
-  FILE * fp = fopen("sup", "r+");
   char line[50];
   char * name;
   long points = 0;
   char * itemstart;
   char * itemend;
 
-  for(int i = 0; i < 1 + 8; i++){
+  for(int i = 0; i < 8; i++){
     fgets(line, 50, fp);
     name = getstring(line);
     if(strcmp(itemname, name) == 0)
@@ -87,27 +83,26 @@ void Done(char * itemname)
       break;
     }
   }
-
-  WriteStats();
-  fclose(fp);
 }
 
-void Reset()
+void Score()
 {
-  FILE * fp = fopen("sup", "r+");
-  score = 0;
-  WriteStats();
-  fclose(fp);
+  printf("Score:%ld\n", score);
 }
 
 int main(int argc, char * argv[])
 {
   char line[50];
-  /* TODO:use getenv("HOME")/.config/dime/tasklist */
-  FILE * fp = fopen("sup", "r+");
-  fgets(line, 50, fp);
+  char list[PATH_MAX];
+  char log[PATH_MAX];
+  char * home = getenv("HOME");
+
+  sprintf(list, "%s/.config/dime/tasklist", home);
+  sprintf(log, "%s/.local/share/dime/log", home);
+  fp = fopen(list, "r");
+  lg = fopen(log, "a+");
+  while(fgets(line, 50, lg)){}
   ReadStats(line);
-  fclose(fp);
 
   time_t t = time(NULL);
   struct tm tm = *localtime(&t);
@@ -115,8 +110,8 @@ int main(int argc, char * argv[])
 
   if(checkDay !=day)
   {
-    Reset();
     day = checkDay;
+    score = 0;
   }
 
   if(argc == 1)
@@ -126,12 +121,25 @@ int main(int argc, char * argv[])
   {
     if(*argv[i] == '-' )
     {
-      if(argv[i][1] == 'd')
-        Done(argv[i+1]);
-      else if (argv[i][1] == 'r')
-       Reset();
+      switch(argv[i][1])
+      {
+        case 'd':
+          Done(argv[i+1]);
+          break;
+        case 'r':
+          score = 0;
+          break;
+        case 's':
+          Score();
+          break;
+        default:
+          break;
+      }
       //TODO:add undo
     }
   }
+
+  WriteStats();
   fclose(fp);
+  fclose(lg);
 }
