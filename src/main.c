@@ -8,10 +8,14 @@
 #include <unistd.h>
 #include "timer.h"
 
+//TODO: refector
+//TODO: change how state is stored
+
 volatile bool done = FALSE;
 time_t dtime;
 long score;
 long day;
+long position;
 FILE * fp;
 FILE * lg;
 
@@ -26,6 +30,7 @@ char * getstring(char * itemstart)
   char * breakchar = strchr(itemstart, ',');
   *breakchar = '\0';
   char * dest = malloc(sizeof(char) * (strlen(itemstart) + 1));
+  dest[0] = '\0';
   strcpy(dest, itemstart);
   *breakchar = ',';
   return dest;
@@ -37,26 +42,36 @@ void ReadStats(char * statString)
 
   char * next = strchr(statString, ',');
   score = getNum(&next[1]);
+
+  next = strchr(&next[1], ',');
+  position = getNum(&next[1]);
 }
 
 void WriteStats()
 {
   char out[50];
-  sprintf(out, "%ld,%ld,\n", day, score);
+  sprintf(out, "%ld,%ld,%ld,\n", day, score, position);
   fputs(out, lg);
+}
+
+int CountLines()
+{
+  int lineCount = 0;
+  char temp[150];
+  while(fgets(temp, 150, fp)){ lineCount++; }
+  rewind(fp);
+
+  return lineCount;
 }
 
 void spit()
 {
-  time_t seed;
-  srand(time(&seed));
   char line[50];
-  int position = rand()%7 + 1;
+  int itemposition = position;
 
-  for(int i = 0; i < position; i++){
+  for(int i = 0; i < itemposition; i++){
     fgets(line, 50, fp);
   }
-
 
   printf("%s\nScore:%ld\n", getstring(line), score);
   exit(0);
@@ -69,8 +84,9 @@ void Done(char * itemname)
   long points = 0;
   char * itemstart;
   char * itemend;
+  int i;
 
-  for(int i = 0; i < 8; i++){
+  for(i = 0; i < CountLines(); i++){
     fgets(line, 50, fp);
     name = getstring(line);
     if(strcmp(itemname, name) == 0)
@@ -82,6 +98,14 @@ void Done(char * itemname)
       printf("score: %ld\n", score);
       break;
     }
+  }
+
+  if(position + 1 < CountLines())
+  {
+    if(position == i + 1)
+      position += 1;
+  } else {
+    position = 1;
   }
 }
 
@@ -111,6 +135,7 @@ int main(int argc, char * argv[])
   if(checkDay !=day)
   {
     day = checkDay;
+    position = 1;
     score = 0;
   }
 
