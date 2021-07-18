@@ -7,7 +7,6 @@ void spit(struct queue * queue, long score)
 {
   if(queue->head != NULL)
     printf("%s:%ld", getTask(queue)->name, score);
-  exit(0);
 }
 
 void Done(struct queue * q, long * score)
@@ -25,7 +24,21 @@ void Done(struct queue * q, long * score)
   fclose(st);
 }
 
+void Miss(struct queue * q) {
+  dequeue(q);
+  char out[150];
+  FILE * st = initFile(".local/share/dime/state", "w");
+
+  do {
+    sprintf(out, "%s,0,\n", getTask(q)->name);
+    fputs(out, st);
+  } while(dequeue(q));
+
+  fclose(st);
+}
+
 void Score(long score)
 {
   printf("Score:%ld\n", score);
 }
+
