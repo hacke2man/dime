@@ -120,7 +120,17 @@ int main(int argc, char * argv[])
     }
   }
 
-  WriteStats(lg, day, score);
+  if (shouldWrite) WriteStats(lg, day, score);
+
+  if(stateChanged) {
+    if(fork())
+    {
+      char * args[] = {"pkill", "-RTMIN+2", "dwmblocks", NULL};
+      execvp("pkill", args);
+      exit(0);
+    }
+  }
+
   fclose(fp);
   fclose(lg);
   fclose(st);
