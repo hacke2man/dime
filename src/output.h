@@ -10,6 +10,7 @@ extern "C" {
 void spit(struct queue * queue, long score);
 void Score();
 void Done(struct queue * q, long * score);
+void Miss(struct queue * q);
 
 #ifdef __cplusplus
 }
