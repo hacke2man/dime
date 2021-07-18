@@ -37,6 +37,17 @@ void resetstate(struct queue * queue, FILE * fp)
     fputs(out, st);
     i++;
   } while(dequeue(queue) && i < 5);
+
+  while(dequeue(queue)){};
+
+  i = 0;
+  rewind(fp);
+  while(fgets(line, 50, fp) && i < 5)
+  {
+    enqueue(queue, createtask(getstring(line), getNum(&strchr(line, ',')[1])));
+    i++;
+  }
+
   fclose(st);
 }
 
@@ -47,7 +58,7 @@ int main(int argc, char * argv[])
   long score;
   long day;
   FILE * fp = initFile(".config/dime/tasklist", "r");
-  FILE * lg = initFile(".local/share/dime/log", "a+");
+  FILE * lg = initFile(".local/share/dime/log", "r+");
   FILE * st = initFile(".local/share/dime/state", "r");
 
   while(fgets(line, 50, st))
@@ -70,12 +81,15 @@ int main(int argc, char * argv[])
     resetstate(queue, fp);
     day = checkDay;
     score = 0;
+    WriteStats(lg, day, score);
   }
 
   if(argc == 1)
     spit(queue, score);
 
-  for(int i = 0; i < argc; i++)
+  bool shouldWrite = 0;
+  bool stateChanged = 0;
+  for(int i = 1; i < argc; i++)
   {
     if(*argv[i] == '-' )
     {
@@ -83,14 +97,21 @@ int main(int argc, char * argv[])
       {
         case 'd':
           Done(queue, &score);
+          shouldWrite = 1;
+          stateChanged = 1;
           break;
         case 'r':
           resetstate(queue, fp);
           score = 0;
+          shouldWrite = 1;
+          stateChanged = 1;
           break;
         case 's':
           Score(score);
           break;
+        case 'm':
+          Miss(queue);
+          stateChanged = 1;
           break;
         default:
           break;
