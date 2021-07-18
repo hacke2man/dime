@@ -1,5 +1,7 @@
 #include "filefunc.h"
 #include "parse.h"
+#include <stdio.h>
+#include <stdlib.h>
 
 void ReadStats(char * statString, long * day, long * score)
 {
@@ -12,6 +14,21 @@ void ReadStats(char * statString, long * day, long * score)
 void WriteStats(FILE * lg, long day, long score)
 {
   char out[50];
+  rewind(lg);
+
+  int pos = 0;
+  while(fgets(out, 50, lg))
+    pos++;
+
+  char * itemend = strchr(out, ',');
+  if(strtol(out, &itemend, 10) == day)
+  {
+    rewind(lg);
+    for(int i = 0; i < pos - 1; i++)
+    {
+      fgets(out, 50, lg);
+    }
+  }
   sprintf(out, "%ld,%ld,\n", day, score);
   fputs(out, lg);
 }
